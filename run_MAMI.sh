@@ -1,31 +1,46 @@
 #!/bin/bash -u
-stage=0			        # stage at which to beginning, start from 0 if you need 
-                        # to process dataset
-stop_stage=100			# stage at which to stop
+# -----------------------------------------------------------------------------
+# Pipeline driver for data prep, (uni/multi)modal training, cross-validation, and analysis.
+# Stages:
+#   0 - Prepare datasets (generate train/eval/test JSON)
+#   1 - Train unimodal baselines (text-only, image-only) for taskA/taskB
+#   2 - Train Hate-Attention model (taskA/taskB)
+#   3 - Cross-validate Hate-Attention (taskA/taskB)
+#   4 - Train Hate-CLIPper baseline (taskA/taskB)
+#   5 - Cross-validate Hate-CLIPper (taskA/taskB)
+#   8 - Run statistical tests, modality analysis, ECE for Unimodal/Multimodal
+# -----------------------------------------------------------------------------
 
-datasource=./Sourcedata # Path save downloaded raw data
-dsetdir=./dataset/MAMI  # Path save processed dataset (generate JSON file for training)
-outdir=./output/MAMI    # Path save trained model and the results
-cashedir=./CASHE        # Path save downloaded pre-trained language models
+
+stage=0                  # (int) Start stage index. Use 0 to include dataset prep.
+stop_stage=100           # (int) Stop stage index. Larger value runs all stages.
+
+datasource=./Sourcedata  # (path) Root directory containing downloaded raw data.
+metadir=./meta_info/MAMI # (path) Directory to save the meta information for reproduction
+dsetdir=./dataset/MAMI   # (path) Directory to save processed dataset (JSON files).
+outdir=./output/MAMI     # (path) Directory to save trained models and results.
+cashedir=./CASHE         # (path) Directory for cached/downloaded pretrained models.
 
 
+# --- Stage 0: dataset preparation ------------------------------------------------
 if [ ${stage} -le 0 ] && [ ${stop_stage} -ge 0 ]; then
     if [ "$(ls -A ${dsetdir})" ]; then
     	echo "Dataset already existed"
     else
-        # This script generate JSON data for train, eval and test set. Each JSON file 
-        # contains text, image path and the ground truth label of the sample
+        # Generate JSON data for train/eval/test with text, image path, and labels.
     	python3 local/datasets/dataset_mami.py  --sourcedir ${datasource}/MAMI      \
-    						                    --savedir ${dsetdir} || exit 1;
+    						                    --savedir ${dsetdir}                \
+                                                --metadir ${metadir} || exit 1;
         
     fi
 fi
 
+# --- Stage 1: unimodal pretraining (image-only, text-only) ----------------------
 if [ ${stage} -le 1 ] && [ ${stop_stage} -ge 1 ]; then
     if [ "$(ls -A ${outdir}/Unimodal/mami_image/taskB/results)" ]; then
     	echo "mami unimodal model already pretrained"
     else
-        # Here we train the text and image-only models
+        # Train text-only and image-only models for both tasks.
         for modal in mami_image mami_text; do # 
             for task in taskA taskB; do #
                 python3 local/MAMI/unimodal/train.py --datadir ${dsetdir}           \
@@ -38,11 +53,12 @@ if [ ${stage} -le 1 ] && [ ${stop_stage} -ge 1 ]; then
     fi      
 fi
 
+# --- Stage 2: Hate-Attention training ------------------------------------------
 if [ ${stage} -le 2 ] && [ ${stop_stage} -ge 2 ]; then
     if [ "$(ls -A ${outdir}/Multimodal/Hate-Attention-config2/taskB/results)" ]; then
     	echo "Hate-Attention model already trained"
     else
-        # This python script is for our proposed Hate-Attention model
+        # Train proposed Hate-Attention model (multimodal) for both tasks.
         modal=Hate-Attention
         for task in  taskA taskB ; do 
             python3 local/MAMI/multimodal/Hate_Attention/train.py --datadir ${dsetdir}  \
@@ -53,14 +69,17 @@ if [ ${stage} -le 2 ] && [ ${stop_stage} -ge 2 ]; then
         done
     fi      
 fi
+
+# --- Stage 3: Hate-Attention cross-validation -----------------------------------
 if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
     if [ "$(ls -A ${outdir}/Multimodal/Hate-Attention-cv-config2/taskB/9)" ]; then
     	echo "Hate-Attention model cross validation already trained"
     else
-        # This python script is for Hate-Attention model cross-validation
+        # Cross-validate Hate-Attention model for both tasks.
         modal=Hate-Attention
         for task in  taskA taskB  ; do 
             python3 local/MAMI/multimodal/Hate_Attention/train_cv.py --datadir ${dsetdir}   \
+                                                                     --metadir ${metadir}   \
                                                                      --modal $modal         \
                                                                      --task $task           \
                                                                      --savedir ${outdir}    \
@@ -69,11 +88,12 @@ if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
     fi      
 fi
 
+# --- Stage 4: Hate-CLIPper training --------------------------------------------
 if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
     if [ "$(ls -A ${outdir}/Multimodal/Hate-CLIPper/taskB/results)" ]; then
     	echo "Hate-CLIPper model already trained"
     else
-        # This python script is for Hate-CLIPper baseline model
+        # Train Hate-CLIPper baseline (multimodal) for both tasks.
         modal=Hate-CLIPper
         for task in  taskA taskB ; do 
             python3 local/MAMI/multimodal/Hate_CLIPper/train.py --datadir ${dsetdir}        \
@@ -85,11 +105,12 @@ if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
     fi      
 fi
 
+# --- Stage 5: Hate-CLIPper cross-validation ------------------------------------
 if [ ${stage} -le 5 ] && [ ${stop_stage} -ge 5 ]; then
     if [ "$(ls -A ${outdir}/Multimodal/Hate-CLIPper-cv/taskB/9)" ]; then
     	echo "Hate-CLIPper model cross validation already trained"
     else
-        # This python script is for Hate-CLIPper model cross-validation
+        # Cross-validate Hate-CLIPper model for both tasks.
         modal=Hate-CLIPper
         for task in  taskA taskB ; do 
         python3 local/MAMI/multimodal/Hate_CLIPper/train_cv.py --datadir ${dsetdir}     \
@@ -101,17 +122,18 @@ if [ ${stage} -le 5 ] && [ ${stop_stage} -ge 5 ]; then
     fi      
 fi
 
-if [ ${stage} -le 8 ] && [ ${stop_stage} -ge 8 ]; then
-    python3 local/MAMI/significant_test.py --resultsdir ${outdir}\
-                                                --modaltype Unimodal || exit 1;
-    python3 local/MAMI/modal_analyse.py --resultsdir ${outdir}\
-                                                --modaltype Unimodal || exit 1;   
-    python3 local/MAMI/get_ece.py --resultsdir ${outdir}\
-                                                --modaltype Unimodal || exit 1;  
-    python3 local/MAMI/significant_test.py --resultsdir ${outdir}\
-                                                --modaltype Multimodal || exit 1;
-    python3 local/MAMI/modal_analyse.py --resultsdir ${outdir}\
-                                                --modaltype Multimodal || exit 1;   
-    python3 local/MAMI/get_ece.py --resultsdir ${outdir}\
-                                                --modaltype Multimodal || exit 1;                                         
+# --- Stage 6: statistical tests, analysis, calibration --------------------------
+if [ ${stage} -le 6 ] && [ ${stop_stage} -ge 6 ]; then
+    python3 local/MAMI/significant_test.py --resultsdir ${outdir}       \
+                                           --modaltype Unimodal || exit 1;
+    python3 local/MAMI/modal_analyse.py --resultsdir ${outdir}          \
+                                        --modaltype Unimodal || exit 1;   
+    python3 local/MAMI/get_ece.py --resultsdir ${outdir}                \
+                                  --modaltype Unimodal || exit 1;  
+    python3 local/MAMI/significant_test.py --resultsdir ${outdir}       \
+                                           --modaltype Multimodal || exit 1;
+    python3 local/MAMI/modal_analyse.py --resultsdir ${outdir}          \
+                                        --modaltype Multimodal || exit 1;   
+    python3 local/MAMI/get_ece.py --resultsdir ${outdir}                \
+                                  --modaltype Multimodal || exit 1;                                         
 fi

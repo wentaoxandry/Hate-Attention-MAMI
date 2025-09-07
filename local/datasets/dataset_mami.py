@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
+import re
 import os
 from nltk.tokenize import TweetTokenizer
 from ftfy import fix_text
@@ -8,25 +9,71 @@ import argparse
 from emoji import demojize
 tokenizer = TweetTokenizer()
 
-def normalizeTFToken(token):
-    lowercased_token = token.lower()
-    if token.startswith("@"):
-        return token.replace('@', '')
-    elif token.startswith("#"):
-        return token.replace('#', '')
-    elif lowercased_token.startswith("http") or lowercased_token.startswith("www"):
+def normalizeTFToken(text):
+    """
+    Normalize a text.
+
+    Parameters
+    ----------
+    text : str
+        Raw text.
+
+    Returns
+    -------
+    str
+        Normalized text with mentions/hashtags stripped, URLs replaced,
+        and emojis converted to names.
+    """
+    lowercased_text = text.lower()
+    if text.startswith("@"):
+        return text.replace('@', '')
+    elif text.startswith("#"):
+        return text.replace('#', '')
+    elif lowercased_text.startswith("http") or lowercased_text.startswith("www"):
         return 'URL'
-    elif token in UNICODE_EMOJI['en']:
-        return demojize(token)
+    elif text in UNICODE_EMOJI['en']:
+        return demojize(text)
     else:
-        return token
+        return text
 
 def nospecial(text):
-	import re
-	text = re.sub("[^a-zA-Z0-9 .,?!\']+", "",text)
-	return text
+    """
+    Remove non-alphanumeric and selected punctuation characters.
+
+    Parameters
+    ----------
+    text : str
+        Input string.
+
+    Returns
+    -------
+    str
+        Cleaned string containing only alphanumerics and allowed punctuation.
+    """
+    text = re.sub("[^a-zA-Z0-9 .,?!\']+", "",text)
+    return text
 
 def text_process(text):
+    """
+    Normalize and clean input text.
+
+    Steps:
+    - Fix Unicode encoding issues.
+    - Tokenize using TweetTokenizer.
+    - Normalize tokens (mentions, hashtags, URLs, emojis).
+    - Remove special characters.
+    - Lowercase the final string.
+
+    Parameters
+    ----------
+    text : str
+        Raw text input.
+
+    Returns
+    -------
+    str
+        Normalized and cleaned text.
+    """
     texttrans = fix_text(text)  # some special chars like 'à¶´à¶§à·’ à¶»à·à¶½à·Š'
                                 # will transformed into the right form පටි රෝල්
     tokens = tokenizer.tokenize(texttrans.replace('\n', ''))
@@ -43,12 +90,22 @@ def text_process(text):
     return texttrans
 
 def get_args():
-    parser = argparse.ArgumentParser()
+    """
+    Parse command-line arguments.
 
+    Returns
+    -------
+    argparse.Namespace
+        Parsed arguments containing:
+        - sourcedir : str, path to raw data.
+        - savedir : str, path to save processed data.
+        - metadir : str, path to meta information directory.
+    """
+    parser = argparse.ArgumentParser()
     # get arguments from outside
-    parser.add_argument('--sourcedir', default='./Sourcedata/MAMI', type=str, help='dir saves the downloaded raw data')
-    parser.add_argument('--savedir', default='./dataset/MAMI', type=str, help='dir saves the processed data')
-    parser.add_argument('--metadir', default='./meta_info/MAMI', type=str, help='dir save the meta information, which is used for the results reproduction')
+    parser.add_argument('--sourcedir', default='./Sourcedata/MAMI', type=str, help='path to raw data.')
+    parser.add_argument('--savedir', default='./dataset/MAMI', type=str, help='path to save processed data.')
+    parser.add_argument('--metadir', default='./meta_info/MAMI', type=str, help='path to meta information directory, which is used for the results reproduction')
     args = parser.parse_args()
     return args
 

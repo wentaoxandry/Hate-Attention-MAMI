@@ -176,8 +176,7 @@ def processing(config, dataset=None):
 
     # define optimizer
     optimizer = torch.optim.AdamW(model.parameters(),
-                                  lr=config["lr"]
-                                  )
+                                  lr=config["lr"])
 
     # create data loader for the train, validation and test set
     data_loader_train = torch.utils.data.DataLoader(dataset.train_dataset, shuffle=True, drop_last=False,
