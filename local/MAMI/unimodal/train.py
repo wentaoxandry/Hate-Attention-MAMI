@@ -254,10 +254,10 @@ def get_args():
     parser = argparse.ArgumentParser()
 
     # get arguments from outside
-    parser.add_argument('--datadir', default='./dataset', type=str, help='dir saves the processed data')
+    parser.add_argument('--datadir', default='./dataset/MAMI', type=str, help='dir saves the processed data')
     parser.add_argument('--modal', default='mami_text', type=str, help='which data stream, options: mami_image, mami_text')
     parser.add_argument('--task', default='taskA', type=str, help='which task, options: taskA, taskB')
-    parser.add_argument('--savedir', default='./output', type=str, help='dir saves the trained model and results')
+    parser.add_argument('--savedir', default='./output/MAMI', type=str, help='dir saves the trained model and results')
     parser.add_argument('--cashedir', default='./CASHE', type=str, help='dir saves downloaded pre-trained language models')
     args = parser.parse_args()
     return args

@@ -15,11 +15,11 @@
 stage=0                  # (int) Start stage index. Use 0 to include dataset prep.
 stop_stage=100           # (int) Stop stage index. Larger value runs all stages.
 
-datasource=./../MAMI_test/Sourcedata #./Sourcedata # (path) Root directory containing downloaded raw data.
+datasource=./Sourcedata  # (path) Root directory containing downloaded raw data.
 metadir=./meta_info/MAMI # (path) Directory to save the meta information for reproduction
-dsetdir=./../MAMI_test/dataset/MAMI #./dataset/MAMI  # (path) Directory to save processed dataset (JSON files).
-outdir=./../MAMI_test/output/MAMI #./output/MAMI     # (path) Directory to save trained models and results.
-cashedir=./../CASHE #./CASHE         # (path) Directory for cached/downloaded pretrained models.
+dsetdir=./dataset/MAMI   # (path) Directory to save processed dataset (JSON files).
+outdir=./output/MAMI     # (path) Directory to save trained models and results.
+cashedir=./CASHE         # (path) Directory for cached/downloaded pretrained models.
 
 
 # --- Stage 0: dataset preparation ------------------------------------------------
