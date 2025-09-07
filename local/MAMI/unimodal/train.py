@@ -3,7 +3,7 @@ import random
 from model import *
 from utils import *
 import logging
-import score_computer
+from .. import score_computer
 import numpy as np
 from tqdm import tqdm
 import argparse

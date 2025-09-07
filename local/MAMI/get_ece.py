@@ -1,6 +1,5 @@
-import os, sys, json, argparse
+import os, json, argparse
 import numpy as np
-import scipy
 import numpy as np
 from reliability_diagrams import get_ece_score
 import logging
@@ -60,65 +59,10 @@ def compute_f1(pred_values, gold_values):
   f1 = (pos_F1 + neg_F1) / 2
   return f1
 
-'''def compute_scoreA(taskAdict):
-  pred = []
-  label = []
-  confidence = []
-  for i in list(taskAdict.keys()):
-    pred.append(taskAdict[i]['predict'])
-    label.append(taskAdict[i]['label'])
-    confidence.append(taskAdict[i]['prob'][taskAdict[i]['predict']])
-  return pred, label, confidence
-
-def predict_scoreA(taskAdict, taskBdict):
-    pred = []
-    label = []
-    confidence = []
-    for i in list(taskBdict.keys()):
-        prob1 = max(taskBdict[i]['prob'])
-        prob = [1-prob1, prob1]
-        predict = round(prob1)
-        pred.append(predict)
-        confidence.append(prob[predict])
-        label.append(taskAdict[i]['label'])
-    return pred, label, confidence
-def compute_scoreB(taskBdict, classtype):
-  pred = []
-  label = []
-  confidence = []
-  if classtype == 'Shaming':
-    idx = 0
-  elif classtype == 'Stereotype':
-     idx = 1
-  elif classtype == 'Objectification':
-    idx = 2
-  elif classtype == 'Violence':
-    idx = 3
-
-  for i in list(taskBdict.keys()):
-    pred.append(taskBdict[i]['predict'][idx])
-    label.append(taskBdict[i]['label'][idx])
-    confidence.append(taskBdict[i]['prob'][int(taskBdict[i]['predict'][idx])])
-  return pred, label, confidence
-'''
 def compute_scoreA(taskAdict):
   pred = []
   label = []
-  confidence = []
-  '''for i in list(taskAdict.keys()):
-    prob1 = taskAdict[i]['prob'][0]
-    prob = [1-prob1, prob1]
-    pred.append(prob1)
-    if isinstance(taskAdict[i]['predict'], list):
-      label.append(taskAdict[i]['label'][0])
-      if len(taskAdict[i]['label']) == 1:
-        confidence.append(prob[int(taskAdict[i]['predict'][0])])
-      else:
-        confidence.append(prob[int(taskAdict[i]['predict'][1])])
-    else:
-       label.append(taskAdict[i]['label'])
-       confidence.append(prob[int(taskAdict[i]['predict'])])'''
-    
+  confidence = []    
   for i in list(taskAdict.keys()):
       prob1 = taskAdict[i]['prob'][0]
       prob = [1-prob1, prob1]
@@ -212,11 +156,9 @@ if __name__ == '__main__':
     logging.info(f'Unimodal ECE scores')
 
     if modaltype == 'Unimodal':
-        modals = ['BERTC', 'GCAN', 'mami_image', 'mami_text', 'ViT']
+        modals = ['mami_image', 'mami_text']
     else:
-        modals = ['DSW_text_RMs', 'DSW_image_RMs', 'DSW_all_RMs', 'DSW_no_RMs',
-                  'Representation_text_RMs', 'Representation_image_RMs', 'Representation_all_RMs', 'Representation_no_RMs', 'EarlymaskedLM_new',
-                  'Hate-CLIPper', 'Hate-Attention-config1', 'Hate-Attention-config2', 'chatgpt', 'chatgpt_zero_shot', 'tiny_llava_tuned']
+        modals = ['Hate-CLIPper', 'Hate-Attention', 'Tiny-LLaVA', 'ChatGPT/zero_shot', 'ChatGPT/few_shot']
     modalsdir = [os.path.join(resultsdir, modaltype, i) for i in modals]
     for modal, modaldir in zip(modals, modalsdir):
       for task in ['taskA', 'taskB']:
@@ -230,14 +172,8 @@ if __name__ == '__main__':
                   pred, label, confidence =  compute_scoreA_early(resultsA)
                 else:
                   pred, label, confidence = compute_scoreA(resultsA)
-                #selected_id = [i for i in range(len(label)) if label[i]==1]
-                #select_label = [label[i] for i in selected_id]
-                #select_pred = [pred[i] for i in selected_id]
-                #select_confidence = [confidence[i] for i in selected_id]
                 ece = get_ece_score(label, pred, confidence, modal)
                 logging.info(f'Trained {task} {modal} ECE is {ece}')
-
-
             else:
                 for classtype in ['Shaming', 'Stereotype', 'Objectification', 'Violence']:
                     pred, label, confidence =  compute_scoreB(resultsB, classtype)

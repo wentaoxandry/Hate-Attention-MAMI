@@ -1,7 +1,6 @@
 import torch
 from torch.utils.data import Dataset
 from PIL import Image
-from sklearn import metrics
 
 def pad_clip_custom_sequence(sequences):
     """
@@ -167,10 +166,7 @@ class CLIPdatasetloader(Dataset):
         """
 
         # load text data
-        if 'text' in self.modal or 'image' in self.modal:
-            text = self.datadict[self.datakeys[index]]['text']
-        else:
-            text = self.datadict[self.datakeys[index]]['caption']
+        text = self.datadict[self.datakeys[index]]['text']
 
         # load image data
         image = Image.open(self.datadict[self.datakeys[index]]['imagedir']) 

@@ -1,45 +1,77 @@
 import torch
-import random
 from torch.utils.data import Dataset
-import emoji
-import os
-import copy
 from PIL import Image
-import numpy as np
-from sklearn import metrics
 
 def pad_clip_custom_sequence(sequences):
-    '''
-    To pad different sequences into a padded tensor for training. The main purpose of this function is to separate different sequence, pad them in different ways and return padded sequences.
-    Input:
-        sequences <list>: A sequence with a length of 4, representing the node sets sequence in index 0, neighbor sets sequence in index 1, public edge mask sequence in index 2 and label sequence in index 3.
-                          And the length of each sequences are same as the batch size.
-                          sequences: [node_sets_sequence, neighbor_sets_sequence, public_edge_mask_sequence, label_sequence]
-    Return:
-        node_sets_sequence <torch.LongTensor>: The padded node sets sequence (works with batch_size >= 1).
-        neighbor_sets_sequence <torch.LongTensor>: The padded neighbor sets sequence (works with batch_size >= 1).
-        public_edge_mask_sequence <torch.BoolTensor>: The padded public edge mask sequence (works with batch_size >= 1).
-        label_sequence <torch.FloatTensor>: The padded label sequence (works with batch_size >= 1).
-    '''
+    """
+    Custom collate function to pad CLIP sequences for batching.
+
+    Parameters
+    ----------
+    sequences : Sequence of tuples
+        Each tuple contains:
+        - node_sets (torch.Tensor)
+        - mask (torch.Tensor)
+        - pixel_values (torch.Tensor)
+        - label (torch.Tensor)
+        - filename (str)
+
+    Returns
+    -------
+    tuple
+        - node_sets_sequence : torch.Tensor
+            Padded tensor of node sets.
+        - mask_sequence : torch.Tensor
+            Padded tensor of masks.
+        - pixel_values_sequence : torch.Tensor
+            Tensor of pixel values.
+        - label_sequence : torch.Tensor
+            Tensor of labels.
+        - filename_sequence : list of str
+            List of filenames corresponding to the batch.
+    """
     node_sets_sequence = []
     mask_sequence = []
-    picel_values_sequence = []
+    pixel_values_sequence = []
     label_sequence = []
     filename_sequence = []
     for node_sets, mask, picel_values, labls, filename in sequences:
         node_sets_sequence.append(node_sets.squeeze(0))
         mask_sequence.append(mask.squeeze(0))
-        picel_values_sequence.append(picel_values.squeeze(0))
+        pixel_values_sequence.append(picel_values.squeeze(0))
         label_sequence.append(labls)
         filename_sequence.append(filename)
     node_sets_sequence = torch.nn.utils.rnn.pad_sequence(node_sets_sequence, batch_first=True, padding_value=49407)
     mask_sequence = torch.nn.utils.rnn.pad_sequence(mask_sequence, batch_first=True, padding_value=0)
-    picel_values_sequence = torch.nn.utils.rnn.pad_sequence(picel_values_sequence, batch_first=True)
+    pixel_values_sequence = torch.nn.utils.rnn.pad_sequence(pixel_values_sequence, batch_first=True)
     label_sequence = torch.nn.utils.rnn.pad_sequence(label_sequence, batch_first=True)
-    return node_sets_sequence, mask_sequence, picel_values_sequence, label_sequence, filename_sequence
+    return node_sets_sequence, mask_sequence, pixel_values_sequence, label_sequence, filename_sequence
 
-class CLIPdatasetclass:  # This class is used to achieve parameters sharing among datasets
+class CLIPdatasetclass:  
+    """
+    Construct train, validation, and test datasets for CLIP-based tasks.
+    """
     def __init__(self, train_file, val_file, test_file, tokenizer, device, max_len, task=None):
+        """
+        Initialize the dataset class.
+
+        Parameters
+        ----------
+        train_file : dict
+            Dictionary of the training set.
+        val_file : dict
+            Dictionary of the validation set.
+        test_file : dict
+            Dictionary of the test set.
+        tokenizer : object
+            Tokenizer used for text preprocessing.
+        device : str
+            Device identifier (e.g., 'cpu' or 'cuda').
+        max_len : int
+            Maximum sequence length.
+        task : str, optional
+            Task identifier (e.g., 'taskA' or 'taskB').
+        """
         self.train_file = train_file
         self.val_file = val_file
         self.test_file = test_file
@@ -50,16 +82,40 @@ class CLIPdatasetclass:  # This class is used to achieve parameters sharing amon
         self.train_dataset, self.val_dataset, self.test_dataset= self.prepare_dataset()
 
 
-    def prepare_dataset(self):  # will also build self.edge_stat and self.public_edge_mask
-        # preparing self.train_dataset
+    def prepare_dataset(self):  
+        """
+        Prepare train, validation, and test datasets.
+
+        Returns
+        -------
+        tuple of datasets
+            (train_dataset, val_dataset, test_dataset)
+        """
         train_dataset = CLIPdatasetloader(self.train_file, self.max_len, self.tokenizer, task=self.task)
         val_dataset = CLIPdatasetloader(self.val_file, self.max_len, self.tokenizer, task=self.task)
         test_dataset = CLIPdatasetloader(self.test_file, self.max_len, self.tokenizer, task=self.task)
         return train_dataset, val_dataset, test_dataset
 
 
-class CLIPdatasetloader(Dataset):  # For instantiating train, validation and test dataset
+class CLIPdatasetloader(Dataset):  
+    """
+    Dataset class for creating train, validation, and test sets for CLIP-based tasks.
+    """
     def __init__(self, datadict, max_len, tokenizer, task=None):
+        """
+        Initialize dataset loader.
+
+        Parameters
+        ----------
+        datadict : dict
+            Dictionary mapping filenames to their text, image paths, and labels.
+        max_len : int
+            Maximum token sequence length.
+        tokenizer : object
+            Tokenizer for processing text and images.
+        task : str, optional
+            Task identifier (e.g., 'taskA' or 'taskB').
+        """
         super(CLIPdatasetloader).__init__()
         self.datakeys = self._get_keys(datadict)
         self.datadict = datadict
@@ -68,18 +124,50 @@ class CLIPdatasetloader(Dataset):  # For instantiating train, validation and tes
         self.max_len = max_len
 
     def _get_keys(self, datadict):
-        """Return absolute paths to all utterances, transcriptions and phoneme labels in the required subset."""
+        """
+        Return all keys in the dataset dictionary.
+
+        Parameters
+        ----------
+        datadict : dict
+            Dataset dictionary.
+
+        Returns
+        -------
+        list of str
+            Keys corresponding to dataset entries.
+        """
         keys = list(datadict.keys())
         return keys
 
     def __len__(self):
+        """Return the number of samples in the dataset."""
         return len(self.datakeys)
 
     def __getitem__(self, index):
+        """
+        Get a single sample from the dataset.
+
+        Parameters
+        ----------
+        index : int
+            Index of the sample.
+
+        Returns
+        -------
+        tuple
+            (ids, mask, pixel_values, label, filename)
+        """
+
+        # load text data
         text = self.datadict[self.datakeys[index]]['text']
-        image = Image.open(self.datadict[self.datakeys[index]]['imagedir'])#.replace('./', './../../../'))
+        
+        # load image data
+        image = Image.open(self.datadict[self.datakeys[index]]['imagedir'])
         if image.mode != 'RGB':
             image = image.convert('RGB')
+
+        # toknize text and image into tokens
         out = self.tokenizer(text=[text],
                             images=image,
                             return_tensors="pt",
@@ -90,6 +178,7 @@ class CLIPdatasetloader(Dataset):  # For instantiating train, validation and tes
         pixel_values = out.data['pixel_values']
         filename = self.datakeys[index]
         
+        # load ground truth for tasks
         if self.task == 'taskA':
             label = int(self.datadict[self.datakeys[index]]['taskA'][0])
             label = torch.FloatTensor([label])
@@ -98,10 +187,10 @@ class CLIPdatasetloader(Dataset):  # For instantiating train, validation and tes
             label = [int(i) for i in label]
             label = torch.FloatTensor(label)
         
-
+        # truncated the token and masks due to the maximum token length limitation
         if ids[0].size()[0] > self.max_len:
             newid = ids[0][:self.max_len].unsqueeze(0)
             newmask = mask[0][:self.max_len].unsqueeze(0)
             return newid, newmask, pixel_values, label, filename
         else:
-            return ids, mask, pixel_values, label, filename  # twtfsingdata.squeeze(0), filename
+            return ids, mask, pixel_values, label, filename 

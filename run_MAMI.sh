@@ -15,11 +15,11 @@
 stage=0                  # (int) Start stage index. Use 0 to include dataset prep.
 stop_stage=100           # (int) Stop stage index. Larger value runs all stages.
 
-datasource=./Sourcedata  # (path) Root directory containing downloaded raw data.
+datasource=./../MAMI_test/Sourcedata #./Sourcedata # (path) Root directory containing downloaded raw data.
 metadir=./meta_info/MAMI # (path) Directory to save the meta information for reproduction
-dsetdir=./dataset/MAMI   # (path) Directory to save processed dataset (JSON files).
-outdir=./output/MAMI     # (path) Directory to save trained models and results.
-cashedir=./CASHE         # (path) Directory for cached/downloaded pretrained models.
+dsetdir=./../MAMI_test/dataset/MAMI #./dataset/MAMI  # (path) Directory to save processed dataset (JSON files).
+outdir=./../MAMI_test/output/MAMI #./output/MAMI     # (path) Directory to save trained models and results.
+cashedir=./../CASHE #./CASHE         # (path) Directory for cached/downloaded pretrained models.
 
 
 # --- Stage 0: dataset preparation ------------------------------------------------
@@ -114,6 +114,7 @@ if [ ${stage} -le 5 ] && [ ${stop_stage} -ge 5 ]; then
         modal=Hate-CLIPper
         for task in  taskA taskB ; do 
         python3 local/MAMI/multimodal/Hate_CLIPper/train_cv.py --datadir ${dsetdir}     \
+                                                               --metadir ${metadir}     \
                                                                --modal $modal           \
                                                                --task $task             \
                                                                --savedir ${outdir}      \
@@ -122,16 +123,46 @@ if [ ${stage} -le 5 ] && [ ${stop_stage} -ge 5 ]; then
     fi      
 fi
 
-# --- Stage 6: statistical tests, analysis, calibration --------------------------
+# --- Stage 6: Fine-tune Tiny-LLaVA model --------------------------------------
 if [ ${stage} -le 6 ] && [ ${stop_stage} -ge 6 ]; then
-    python3 local/MAMI/significant_test.py --resultsdir ${outdir}       \
-                                           --modaltype Unimodal || exit 1;
+    if [ "$(ls -A ${outdir}/Multimodal/Tiny-LLaVA/taskB/results)" ]; then
+    	echo "Tiny-LLaVA model already trained"
+    else
+        # Train Tiny-LLaVA baseline (multimodal) for both tasks.
+        modal=Tiny-LLaVA
+        for task in  taskA taskB ; do 
+            python3 local/MAMI/multimodal/TinyLLaVA/train.py --datadir ${dsetdir}        \
+                                                             --modal $modal              \
+                                                             --task $task                \
+                                                             --savedir ${outdir} || exit 1;
+        done
+    fi      
+fi
+
+# --- Stage 7: ChatGPT 4.o model -------------------------------------------------
+if [ ${stage} -le 6 ] && [ ${stop_stage} -ge 6 ]; then
+    if [ "$(ls -A ${outdir}/Multimodal/ChatGPT/few_shot)" ]; then
+    	echo "ChatGPT model already run"
+    else
+        # zero-shot and few shot ChatGPT 4.o model for both tasks.
+        modal=ChatGPT
+        python3 local/MAMI/multimodal/ChatGPT_API/GPT-Captioning-zeroshot.py --sourcedir ${datasource}/MAMI         \
+                                                                             --modal $modal                         \
+                                                                             --savedir ${outdir} || exit 1;
+        python3 local/MAMI/multimodal/ChatGPT_API/GPT-Captioning-fewshot.py --datadir ${dsetdir}                    \
+                                                                             --modal $modal                         \
+                                                                             --savedir ${outdir} || exit 1;                                                                    
+    fi      
+fi
+
+# --- Stage 8: statistical tests, analysis, calibration --------------------------
+if [ ${stage} -le 8 ] && [ ${stop_stage} -ge 8 ]; then
+    # get performance of each model for each category
     python3 local/MAMI/modal_analyse.py --resultsdir ${outdir}          \
                                         --modaltype Unimodal || exit 1;   
+    # plot reliability diagram for each model                                        
     python3 local/MAMI/get_ece.py --resultsdir ${outdir}                \
                                   --modaltype Unimodal || exit 1;  
-    python3 local/MAMI/significant_test.py --resultsdir ${outdir}       \
-                                           --modaltype Multimodal || exit 1;
     python3 local/MAMI/modal_analyse.py --resultsdir ${outdir}          \
                                         --modaltype Multimodal || exit 1;   
     python3 local/MAMI/get_ece.py --resultsdir ${outdir}                \

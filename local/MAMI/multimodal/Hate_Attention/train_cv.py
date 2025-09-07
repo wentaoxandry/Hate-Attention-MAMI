@@ -4,7 +4,7 @@ from model import *
 from utils import *
 import logging
 import numpy as np
-import score_computer
+from ... import score_computer
 from tqdm import tqdm
 import argparse
 from transformers import CLIPImageProcessor, CLIPTokenizer
