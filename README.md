@@ -1,16 +1,15 @@
 # Hateful Memes
 
-This project focuses on the **detection of misogynous memes**. We evaluate all models using the [MAMI-22 dataset](https://aclanthology.org/2022.semeval-1.69/) [1].  
+This project focuses on the **detection of misogynous memes**. We evaluate all models using the [MAMI-22 dataset](https://www.kaggle.com/datasets/chukwuebukaanulunko/multimodal-misogyny-detection-mami-2022?select=validation.tsv) [1].  
 
 ---
 
-## Methodology
-
-### 1. Baseline Models
+## Unimodal Models
 We first run unimodal models for both text and image modalities, based on the pre-trained CLIP encoders [2] (`openai/clip-vit-large-patch14`).  
 
-### 2. Hate-Attention Model
-We then propose and optimize a **Hate-Attention model**, built on top of a pre-trained CLIP model.  
+## Multimodal Models
+### Hate-Attention Model
+We then propose and optimize a **Hate-Attention model**, built on top of a pre-trained CLIP model.  ![Hate-Attention Model](./image/model.png)
 
 The model architecture is shown in:  
 `./image/model.pdf` *(add figure here with a caption)*  
