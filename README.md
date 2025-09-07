@@ -1,40 +1,57 @@
-# Hateful Memes
+# Toxic Memes Detection
 
-This project focuses on the **detection of misogynous memes**. We evaluate all models using the [MAMI-22 dataset](https://www.kaggle.com/datasets/chukwuebukaanulunko/multimodal-misogyny-detection-mami-2022?select=validation.tsv) [1].  
+This project focuses on the **detection of misogynous memes**.  
+We evaluate models using the [MAMI-22 dataset](https://www.kaggle.com/datasets/chukwuebukaanulunko/multimodal-misogyny-detection-mami-2022?select=validation.tsv) [1].  
 
 ---
 
-## Unimodal Models
-We first run unimodal models for both text and image modalities, based on the pre-trained CLIP encoders [2] (`openai/clip-vit-large-patch14`).  
+## 1. Unimodal Models
+We first train unimodal models for **text** and **image** modalities, based on the pre-trained CLIP encoders [2]:  
+`openai/clip-vit-large-patch14`  
 
-## Multimodal Models
-### Hate-Attention Model
-We then propose and optimize a **Hate-Attention model**, built on top of a pre-trained CLIP model.  ![Hate-Attention Model](./image/model.png)
+---
 
-The model architecture is shown in:  
-`./image/model.pdf` *(add figure here with a caption)*  
+## 2. Multimodal Models
 
-#### Hate-Attention Configurations
+### 2.1 Hate-Attention Model
+We propose a **Hate-Attention model**, built on top of a pre-trained CLIP backbone.  
+
+![Hate-Attention Model](./image/model.png)  
+*Figure 1: Hate-Attention Model Architecture*  
+
+The Hate-Attention variants differ in the configuration of the multi-head attention block (Figure 1):  
+
 | Setting | Tiny | Base | Large |
 |---------|------|------|-------|
 | Attention Dimension ($d$) | 768 | 768 | 1024 |
 | Number of Attention Blocks | 0 | 1 | 2 |
-| Number of Attention Heads | - | 16 | 8 |
+| Number of Attention Heads | – | 16 | 8 |
 | Trainable Parameters | 10,830,340 | 21,858,308 | 43,834,372 |
+
+- The **Hate-Attention-tiny** model is a variant of **Hate-CLIPper** [3], which was a top-performing approach on the Hateful Memes dataset.  
 
 ---
 
-## Comparisons
-We compare the Hate-Attention variants with several strong baselines:
-- **Hate-CLIPper** (top-performing model on the Hateful Memes dataset) [3]  
+### 2.2 State-of-the-Art LLM Baselines
+We also compare Hate-Attention against recent large language models:  
 - **TinyLLaVA** [4]  
 - **ChatGPT-4.0** [5], under zero-shot and few-shot settings  
 
 ---
 
-## Analysis
-Finally, we analyze and summarize the performance of all models.  
-We also compute the **Expected Calibration Error (ECE)** [6] and plot **reliability diagrams** ([code reference](https://github.com/hollance/reliability-diagrams)).  
+## 3. Analysis
+We conduct a detailed performance analysis across all models.  
+Additionally, we compute the **Expected Calibration Error (ECE)** [6] and visualize results with **reliability diagrams** ([code reference](https://github.com/hollance/reliability-diagrams)).  
+
+---
+
+## 4. How to Run
+
+1. Download the **MAMI-22 dataset** and save it under the folder: `./Sourcedata`.
+2. Run the training script:  
+```bash
+sh run_MAMI.sh
+```
 
 ---
 
