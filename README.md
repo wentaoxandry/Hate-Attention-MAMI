@@ -36,7 +36,7 @@ sh run_MAMI.sh
   Train unimodal models for **text** and **image** modalities, based on the pre-trained CLIP encoders [2]:  
   `openai/clip-vit-large-patch14`
 
-- **Stage 2: Train Hate-Attention model**
+- **Stage 2: Train Hate-Attention model** <br>
   We propose a **Hate-Attention model** (Figure 1), built on top of a pre-trained CLIP backbone. The Hate-Attention variants differ in the configuration of the multi-head attention block:
 
   | Setting | Tiny | Base | Large |
