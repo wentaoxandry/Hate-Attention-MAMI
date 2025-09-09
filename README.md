@@ -65,7 +65,7 @@ sh run_MAMI.sh
   Zero-shot and few-shot **ChatGPT-4.o** model [4] 
 
 - **Stage 8: Analysis** <br>
-  We conduct a detailed performance analysis across all models. Additionally, we compute the **Expected Calibration Error (ECE)** [7] and visualize results with **reliability diagrams** ([code reference](https://github.com/hollance/reliability-diagrams)).   
+  We conduct a detailed performance analysis across all models. Additionally, we compute the **Expected Calibration Error (ECE)** [7] and visualize results with  [**reliability diagrams**](https://github.com/hollance/reliability-diagrams).   
 
 ---
 
