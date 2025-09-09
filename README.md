@@ -21,15 +21,16 @@ The MAMI-22 dataset contains two tasks:
 
 ## How to Run
 
-1. Download the **MAMI-22 dataset** and save it under the folder: `./Sourcedata`.
-2. Run the training script:  
+1. Create a folder named `./Sourcedata` in the project root directory.  
+2. Download the **MAMI-22 dataset** and place it inside the `./Sourcedata` folder.  
+3. Run the training script:  
 ```bash
 sh run_MAMI.sh
 ```
 
 ### Stages
 
-- **Stage 0: Dataset preparation** <br>  
+- **Stage 0: Dataset preparation** <br>
   Extract text, image paths, and ground-truth labels from the dataset and save them in JSON files for the train, validation, and test sets.
 
 - **Stage 1: Train unimodal models** <br> 
