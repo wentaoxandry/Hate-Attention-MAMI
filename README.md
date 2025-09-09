@@ -1,34 +1,59 @@
-# Toxic Memes Detection
+# Toxic memes detection
 
-This project focuses on the **detection of misogynous memes**.  
-We evaluate models using the [MAMI-22 dataset](https://www.kaggle.com/datasets/chukwuebukaanulunko/multimodal-misogyny-detection-mami-2022?select=validation.tsv) [1].  
+In this project, we propose the **Hate-Attention** model (Figure 1) for the task of misogynous meme detection. We compare our approach with the Hate-CLIPper model [1], which was one of the top-performing methods on the Hateful Memes dataset. In addition, we evaluate state-of-the-art LLMs, including a fine-tuned Tiny-LLaVA model, as well as zero-shot and few-shot settings of the ChatGPT-4.0 model. All models are evaluated on the [MAMI-22 dataset](https://www.kaggle.com/datasets/chukwuebukaanulunko/multimodal-misogyny-detection-mami-2022?select=validation.tsv) [2].
 
----
-
-## 1. Unimodal Models
-We first train unimodal models for **text** and **image** modalities, based on the pre-trained CLIP encoders [2]:  
-`openai/clip-vit-large-patch14`  
-
----
-
-## 2. Multimodal Models
-
-### 2.1 Hate-Attention Model
-We propose a **Hate-Attention model**, built on top of a pre-trained CLIP backbone.  
+To the best of our knowledge, the proposed **Hate-Attention-large** model achieves state-of-the-art performance on the MAMI-22 Task B.
 
 ![Hate-Attention Model](./image/model.png)  
 *Figure 1: Hate-Attention Model Architecture*  
 
-The Hate-Attention variants differ in the configuration of the multi-head attention block (Figure 1):  
+---
 
-| Setting | Tiny | Base | Large |
-|---------|------|------|-------|
-| Attention Dimension ($d$) | 768 | 768 | 1024 |
-| Number of Attention Blocks | 0 | 1 | 2 |
-| Number of Attention Heads | – | 16 | 8 |
-| Trainable Parameters | 10,830,340 | 21,858,308 | 43,834,372 |
+## MAMI-22 dataset
+The MAMI-22 dataset contains two tasks:
+- **Task A**: Identify misogynous memes (binary classification).
+- **Task B**: Classify misogynous memes into four potentially overlapping categories: *Shaming*, *Stereotype*, *Objectification*, and *Violence* (multi-label classification).
 
-- The **Hate-Attention-tiny** model is a variant of **Hate-CLIPper** [3], which was a top-performing approach on the Hateful Memes dataset.  
+*We use a post-processing approach to derive Task A results from Task B predictions, simplifying the problem by addressing both tasks with a single model.*
+
+
+---
+
+## How to Run
+
+1. Download the **MAMI-22 dataset** and save it under the folder: `./Sourcedata`.
+2. Run the training script:  
+```bash
+sh run_MAMI.sh
+```
+
+### Stages
+
+- **Stage 0: Dataset preparation**  
+  Extract text, image paths, and ground-truth labels from the dataset and save them in JSON files for the train, validation, and test sets.
+
+- **Stage 1: Train unimodal models**  
+  Train unimodal models for **text** and **image** modalities, based on the pre-trained CLIP encoders [2]:  
+  `openai/clip-vit-large-patch14`
+
+- **Stage 2: Train Hate-Attention model**
+  We propose a **Hate-Attention model** (Figure 1), built on top of a pre-trained CLIP backbone. The Hate-Attention variants differ in the configuration of the multi-head attention block:
+
+  | Setting | Tiny | Base | Large |
+  |---------|------|------|-------|
+  | Attention Dimension ($d$) | 768 | 768 | 1024 |
+  | Number of Attention Blocks | 0 | 1 | 2 |
+  | Number of Attention Heads | – | 16 | 8 |
+  | Trainable Parameters | 10,830,340 | 21,858,308 | 43,834,372 | 
+
+  **The Hate-Attention-tiny model is a variant of Hate-CLIPper.**
+
+- **Stage 3: Cross-validation of the Hate-Attention model**
+
+---
+
+
+
 
 ---
 
