@@ -29,10 +29,10 @@ sh run_MAMI.sh
 
 ### Stages
 
-- **Stage 0: Dataset preparation**  
+- **Stage 0: Dataset preparation** <br>  
   Extract text, image paths, and ground-truth labels from the dataset and save them in JSON files for the train, validation, and test sets.
 
-- **Stage 1: Train unimodal models**  
+- **Stage 1: Train unimodal models** <br> 
   Train unimodal models for **text** and **image** modalities, based on the pre-trained CLIP encoders [6]:  
   `openai/clip-vit-large-patch14`
 
@@ -48,22 +48,22 @@ sh run_MAMI.sh
 
   **The Hate-Attention-tiny model is a variant of Hate-CLIPper and will be run in Stage 4.**
 
-- **Stage 3: Cross-validation of the Hate-Attention model**
+- **Stage 3: Cross-validation of the Hate-Attention model** <br>
   We conduct **10-fold cross-validation** for the Hate-Attention model to ensure robust performance evaluation.
 
 - **Stage 4: Train Hate-CLIPper model** <br>
   Train the Hate-CLIPper (Hate-Attention-tiny) model
 
-- **Stage 5: Cross-validation of the Hate-CLIPper model**
+- **Stage 5: Cross-validation of the Hate-CLIPper model** <br>
   We conduct **10-fold cross-validation** for the Hate-CLIPper model to ensure robust performance evaluation.
 
-- **Stage 6: Train Tiny-LLaVA model**
+- **Stage 6: Train Tiny-LLaVA model** <br>
   Fine-tune the pre-trained **TinyLLaVA** model [3]
 
-- **Stage 7: Non-optimized ChatGPT 4.o model**
+- **Stage 7: Non-optimized ChatGPT 4.o model** <br>
   Zero-shot and few-shot **ChatGPT-4.o** model [4] 
 
-- **Stage 8: Analysis** 
+- **Stage 8: Analysis** <br>
   We conduct a detailed performance analysis across all models. Additionally, we compute the **Expected Calibration Error (ECE)** [7] and visualize results with **reliability diagrams** ([code reference](https://github.com/hollance/reliability-diagrams)).   
 
 ---
